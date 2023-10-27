@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1094130273322",
+    "project_id": "myteeth-c9e13",
+    "storage_bucket": "myteeth-c9e13.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1094130273322:android:4b61a2ca65ad30d7510753",
+        "android_client_info": {
+          "package_name": "com.example.myteethpractice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACph0lQ7CpK9QOx2cQij2Rm_lFSm52kJU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
