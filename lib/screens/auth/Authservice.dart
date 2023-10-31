@@ -37,4 +37,19 @@ class AuthService extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+
+  Future<void> signOut() async {
+    try {
+      await _auth.signOut();
+      _authState = AuthServiceState.SignedOut;
+      notifyListeners();
+    } catch (e) {
+      print('Error signing out: $e');
+    }
+  }
 }
+
+
+
+

@@ -1,9 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:myteethpractice/Widgets/userimagepicker_widget.dart';
 import 'package:myteethpractice/screens/auth/Authservice.dart';
 import 'package:myteethpractice/screens/home/homescreen.dart';
 import 'package:myteethpractice/screens/splashscreen_waiting.dart';
+
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 final _firebase = FirebaseAuth.instance;
 
@@ -17,10 +22,12 @@ class authscreen extends StatefulWidget {
 class _authscreenState extends State<authscreen> {
   var _isLogin = true;
   var _isAuthenticatng = false;
+ 
 
   var _enteredUsername = '';
   var _enteredEmail = '';
   var _enteredPassword = '';
+  File? _selectIimage;
 
   final _form = GlobalKey<FormState>();
 
@@ -57,6 +64,23 @@ class _authscreenState extends State<authscreen> {
       } else {
         final userCredential = await _firebase.createUserWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
+
+        final Storageref = FirebaseStorage.instance
+            .ref()
+            .child('user_images')
+            .child('${userCredential.user!.uid}.jpg');
+
+        await Storageref.putFile(_selectIimage!);
+        final imageurl = await Storageref.getDownloadURL();
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set({
+          'username': _enteredUsername,
+          'email': _enteredEmail,
+          'image_url': imageurl,
+        });
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
@@ -122,22 +146,27 @@ class _authscreenState extends State<authscreen> {
                                   height: 100,
                                 ),
                                 if (!_isLogin)
-                                  TextFormField(
-                                    decoration: const InputDecoration(
-                                        labelText: 'Username'),
-                                    enableSuggestions: false,
-                                    validator: (value) {
-                                      if (value == null ||
-                                          value.isEmpty ||
-                                          value.trim().length < 4) {
-                                        return 'PLease enter a valid username (at least four characters';
-                                      }
-                                      return null;
-                                    },
-                                    onSaved: (value) {
-                                      _enteredUsername = value!;
+                                  useriimagepicker(
+                                    onPickedImage: (pickedImage) {
+                                      _selectIimage = pickedImage;
                                     },
                                   ),
+                                TextFormField(
+                                  decoration: const InputDecoration(
+                                      labelText: 'Username'),
+                                  enableSuggestions: false,
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.isEmpty ||
+                                        value.trim().length < 4) {
+                                      return 'PLease enter a valid username (at least four characters';
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (value) {
+                                    _enteredUsername = value!;
+                                  },
+                                ),
                                 SizedBox(
                                   height: 20,
                                 ),

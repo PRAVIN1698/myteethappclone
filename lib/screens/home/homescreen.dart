@@ -1,10 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:myteethpractice/Provider/tratmentplanprovider.dart';
 import 'package:myteethpractice/Widgets/carasoul_widget.dart';
 import 'package:myteethpractice/Widgets/carasoulallplaces.dart';
 import 'package:myteethpractice/Widgets/smallcarassoulwidget.dart';
 import 'package:myteethpractice/dummy/carasoul_data.dart';
 import 'package:myteethpractice/screens/Treatmentplans/Treatmentsplans.dart';
+import 'package:myteethpractice/screens/auth/Authservice.dart';
+import 'package:myteethpractice/screens/auth/Authservice.dart';
+import 'package:provider/provider.dart';
+
+final _firebase = FirebaseAuth.instance;
 
 class homescreen extends StatefulWidget {
   const homescreen({super.key});
@@ -15,16 +24,80 @@ class homescreen extends StatefulWidget {
 
 class _homescreen extends State<homescreen> {
   final ScrollController _scrollController = ScrollController();
+
+  String userData = ''; // Initialize a variable to store the Firestore data
+  late User? userimage;
+  String _username = '';
   int _currentIndex = 0;
+
+  final userusername = FirebaseFirestore.instance.collection('users');
+
+  @override
+  void initState() {
+    super.initState();
+    userimage = FirebaseAuth.instance.currentUser;
+
+    if (userimage != null) {
+      final Storageref = FirebaseStorage.instance
+          .ref()
+          .child('user_images')
+          .child('${userimage!.uid}.jpg');
+      fetchUserData();
+    }
+
+    fetchUsername();
+  }
+
+  Future<void> fetchUsername() async {
+    final userDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userimage!.uid); // Replace with the actual document ID
+
+    try {
+      final userDataSnapshot = await userDoc.get();
+      if (userDataSnapshot.exists) {
+        _username = userDataSnapshot.get('username');
+        print('Username: $_username');
+      }
+    } catch (e) {
+      print('Error fetching username: $e');
+    }
+  }
+
+  Future<void> fetchUserData() async {
+    if (userimage == null) {
+      return;
+    }
+
+    final userDoc =
+        FirebaseFirestore.instance.collection('users').doc(userimage!.uid);
+
+    try {
+      final userDataSnapshot = await userDoc.get();
+      if (userDataSnapshot.exists) {
+        final yourData = userDataSnapshot.get('image_url');
+        setState(() {
+          userData = yourData;
+        });
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final navigationbacktoauth =
+        Provider.of<AuthService>(context, listen: false);
+
+    final Authenticateduser = FirebaseAuth.instance.currentUser!;
+
     print('HomeScreen entered');
 
     return Scaffold(
       body: CustomScrollView(
         slivers: <Widget>[
-          SliverAppBar(
+          SliverAppBar.large(
             stretch: true,
             expandedHeight: 450.0,
             pinned: true,
@@ -44,11 +117,47 @@ class _homescreen extends State<homescreen> {
                           ],
                         ),
                       ),
+                      child: Container(
+                        width: double.infinity,
+                        height: 100,
+                        margin: EdgeInsets.fromLTRB(0, 20, 0, 0),
+                        child: Column(children: [
+                          Align(
+                              alignment: Alignment.topLeft,
+                              child: IconButton(
+                                  onPressed: () {
+                                    navigationbacktoauth.signOut();
+                                  },
+                                  icon: Icon(Icons.arrow_back))),
+                          Align(
+                            child: Container(
+                              margin: EdgeInsets.only(left: 50),
+                              alignment: Alignment.center,
+                              width: double
+                                  .infinity, // Set the width to your desired size
+                              height: 50, // Set the height to your desired size
+                              child: ListTile(
+                                leading: userData.isNotEmpty
+                                    ? ClipOval(
+                                        child: Image.network(userData),
+                                      )
+                                    : Container(), // An empty container if userData is empty
+                                title: Text('Welcome $_username',
+                                    style: TextStyle(color: Colors.white)),
+                                subtitle: const Text(
+                                  'How are you!',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]),
+                      ),
                     ),
                     Container(
                       alignment: Alignment.topLeft,
-                      margin: EdgeInsets.fromLTRB(10, 0, 0, 0),
-                      child: Text(
+                      margin: EdgeInsets.fromLTRB(10, 10, 0, 0),
+                      child: const Text(
                         'Nearby Devices',
                         textAlign: TextAlign.left,
                         style: TextStyle(fontSize: 15),
